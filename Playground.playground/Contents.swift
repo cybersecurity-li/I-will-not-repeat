@@ -5,40 +5,28 @@ import UIKit
 extension String {
     
     func toHexadecimalString() -> String {
+        
         let data = self.data(using: String.Encoding.utf8, allowLossyConversion: false)
         return data!.toHexadecimalString()
     }
     
-    func encXor(withHexString: String) -> String {
+    func xor(withHexString hexString: String) -> String {
         
-        var encrypted = [UInt8]()
-        
-        let text = [UInt8](self.utf8)
-        let cipher = [UInt8](withHexString.utf8)
-        
-        for (index, t) in text.enumerated() {
-            encrypted.append(t ^ cipher[index])
-        }
-        
-        return encrypted.toHexadecimalString()
-    }
-    
-    func xor(withHexString: String) -> String {
-        
-        var encrypted = [UInt8]()
+        var result = [UInt8]()
         
         let text = self.asByteArray()
-        let cipher = withHexString.asByteArray()
+        let cipher = hexString.asByteArray()
         
-        for (index, t) in text.enumerated() {
-            encrypted.append(t ^ cipher[index])
+        for (index, character) in text.enumerated() {
+            result.append(character ^ cipher[index])
         }
         
-        return encrypted.toHexadecimalString()
+        return result.toHexadecimalString()
     }
     
-    func asByteArray()-> Array<UInt8> {
-        var arrayLength :Int = self.utf16.count
+    func asByteArray() -> Array<UInt8> {
+        
+        var arrayLength: Int = self.utf16.count
         var hexString = self
         
         if arrayLength % 2 != 0 {
@@ -48,19 +36,35 @@ extension String {
         
         arrayLength = arrayLength / 2
         
-        var buffer : Array<UInt8> = Array(repeating: 0 , count: arrayLength)
-        for index :Int in 0  ..< arrayLength  {
-            let substring :String = (hexString as NSString).substring(with: NSRange(location: 2 * index, length: 2))
+        var buffer: Array<UInt8> = Array(repeating: 0 , count: arrayLength)
+        for index: Int in 0  ..< arrayLength  {
+            let substring: String = (hexString as NSString).substring(with: NSRange(location: 2 * index, length: 2))
             buffer[index] = UInt8(substring, radix: 16)!
         }
         return buffer
     }
     
-    func hexStringToString() -> String {
+    func toAscii() -> String {
         
-        let test = self.asByteArray()
-        let test1 = NSData(bytes: test, length: test.count)
-        return String(data: test1 as Data, encoding: String.Encoding.utf8)!
+        var chars = [Character]()
+        
+        for character in self.characters {
+            chars.append(character)
+        }
+        
+        let numbers = stride(from: 0, to: chars.count, by: 2).map {
+            strtoul(String(chars[$0 ..< $0+2]), nil, 16)
+        }
+        
+        var final = ""
+        var i = 0
+        
+        while i < numbers.count {
+            final.append(Character(UnicodeScalar(Int(numbers[i]))!))
+            i += 1
+        }
+        
+        return final
     }
 }
 
@@ -78,51 +82,21 @@ extension Sequence where Iterator.Element == UInt8 {
     }
 }
 
-func hex2ascii (example: String) -> String
-{
+func performDragging(withCipherText cipherText1: String, cipherText2: String, cipher: String, message: String) {
     
-    var chars = [Character]()
-    
-    for c in example.characters
-    {
-        chars.append(c)
-    }
-    
-    let numbers =  stride(from: 0, to: chars.count, by: 2).map{
-        strtoul(String(chars[$0 ..< $0+2]), nil, 16)
-    }
-    
-    var final = ""
-    var i = 0
-    
-    while i < numbers.count {
-        final.append(Character(UnicodeScalar(Int(numbers[i]))!))
-        i += 1
-    }
-    
-    return final
-}
-
-
-func gurkensalat(string1: String, string2: String, cipher: String, message: String) {
-    
-    print("----------------- Cipher Length: \(cipher.characters.count)")
-    print("----------------- \(message)")
+    print("\n----------------- Cipher Length: \(cipher.characters.count)")
+    print("----------------- \(message) \n")
     
     let cipher = cipher.toHexadecimalString()
-    
-    var cipher1 = "\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)"
-    
-    var cipherText1 = string1
-    var cipherText2 = string2
+    var cipher1 = "\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)\(cipher)"
     
     let xorCipherText = cipherText1.xor(withHexString: cipherText2)
     
     for (index, _) in cipher.characters.enumerated() {
         
-        let test = xorCipherText.xor(withHexString: cipher1)
+        let result = xorCipherText.xor(withHexString: cipher1)
         
-        print("\(index): \(hex2ascii(example: test))")
+        print("\(index): \(result.toAscii())")
         
         cipher1.remove(at: cipher1.startIndex)
     }
@@ -140,30 +114,24 @@ cipherTexts.append("213b14b5ca5290b537155aa1680d0b54eff916bc7e3fcc06d1")
 cipherTexts.append("15fc5990c1f4e574565b665cf22cce12ac5e8a04d24b7a3dca")
 cipherTexts.append("3b3a09abc60191a533134da17c070c07eeb803fd207efc4294")
 cipherTexts.append("54f552dccdb5fd64115d234fbd2ad912eb7d841fc142372adc")
+cipherTexts.append("3c324684871599b92f0340ee68065c09000000000000000000")
 
-
-let cipher = " it is said that "
+let cipher = " the "
 
 for i in 0..<11 {
     
     let cipherText1 = cipherTexts[i]
     
-    gurkensalat(string1: cipherText1, string2: cipherTexts[0], cipher: cipher, message: "Using cipherText\(i) & cipherText0")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[1], cipher: cipher, message: "Using cipherText\(i) & cipherText1")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[2], cipher: cipher, message: "Using cipherText\(i) & cipherText2")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[3], cipher: cipher, message: "Using cipherText\(i) & cipherText3")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[4], cipher: cipher, message: "Using cipherText\(i) & cipherText4")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[5], cipher: cipher, message: "Using cipherText\(i) & cipherText5")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[6], cipher: cipher, message: "Using cipherText\(i) & cipherText6")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[7], cipher: cipher, message: "Using cipherText\(i) & cipherText7")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[8], cipher: cipher, message: "Using cipherText\(i) & cipherText8")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[9], cipher: cipher, message: "Using cipherText\(i) & cipherText9")
-    gurkensalat(string1: cipherText1, string2: cipherTexts[10], cipher: cipher, message: "Using cipherText\(i) & cipherText10")
-
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[0], cipher: cipher, message: "Using cipherText\(i) & cipherText0")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[1], cipher: cipher, message: "Using cipherText\(i) & cipherText1")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[2], cipher: cipher, message: "Using cipherText\(i) & cipherText2")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[3], cipher: cipher, message: "Using cipherText\(i) & cipherText3")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[4], cipher: cipher, message: "Using cipherText\(i) & cipherText4")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[5], cipher: cipher, message: "Using cipherText\(i) & cipherText5")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[6], cipher: cipher, message: "Using cipherText\(i) & cipherText6")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[7], cipher: cipher, message: "Using cipherText\(i) & cipherText7")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[8], cipher: cipher, message: "Using cipherText\(i) & cipherText8")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[9], cipher: cipher, message: "Using cipherText\(i) & cipherText9")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[10], cipher: cipher, message: "Using cipherText\(i) & cipherText10")
+    performDragging(withCipherText: cipherText1, cipherText2: cipherTexts[11], cipher: cipher, message: "Using cipherText\(i) & cipherText11")
 }
-
-
-
-
-
-
