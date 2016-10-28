@@ -1,5 +1,12 @@
+//
+//  main.swift
+//  I will not repeat
+//
+//  Created by Thomas Oehri on 22.10.16.
+//  Copyright © 2016 Thomas Oehri. All rights reserved.
+//
 
-import UIKit
+import Foundation
 
 extension String {
     
